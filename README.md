@@ -250,6 +250,84 @@ The script maintains backups according to these rules:
    - Older than the retention period
    - Not created on the current day
 
+# Restoring GoToSocial Backups
+
+In this example:
+ - The backup root is: `/mnt/data/backup/gotosocial`
+ - The backup timestamp is: `20241115_122300`
+ - The database is: `/var/lib/gotosocial/database.sqlite`
+ - The storage is: `/var/lib/gotosocial/storage/`
+
+1. Source the configuration file
+
+This step is necessary to set the environment variables to aid the recovery process.
+
+```bash
+source /etc/gotosocial-backup.conf
+```
+
+2. Stop GoToSocial
+```bash
+sudo systemctl stop gotosocial
+```
+
+3. Decrypt database and export file (if encrypted)
+```bash
+openssl enc -d -aes-256-cbc -pbkdf2 -in database.sqlite.gz.enc -out database.sqlite.gz -pass pass:"${PASSPHRASE}"
+openssl enc -d -aes-256-cbc -pbkdf2 -in export.json.gz.enc -out export.json.gz -pass pass:"${PASSPHRASE}"
+```
+
+4. Uncompress database and export files
+```bash
+gunzip database.sqlite.gz
+gunzip export.json.gz
+```
+
+5. Preserve the existing database
+```bash
+mv /var/lib/gotosocial/database.sqlite /var/lib/gotosocial/database.sqlite.old
+```
+
+6. Restore the database
+```bash
+cp $BACKUP_ROOT/20241115_122300/database.sqlite /var/lib/gotosocial/database.sqlite
+chown gotosocial:gotosocial /var/lib/gotosocial/database.sqlite
+chmod 644 /var/lib/gotosocial/database.sqlite
+```
+
+7. Restore the export (*optional*)
+
+If your SQLite backup is intact, there is no need to restore the export file.
+However, if you need to restore the export file, you can do so using the following command:
+
+```bash
+gotosocial --config-path /etc/gotosocial/config.yaml admin import --path export.json
+```
+
+8. Preserve existing media
+```bash
+mv /var/lib/gotosocial/storage /var/lib/gotosocial/storage.old
+```
+
+9. Restore media files
+```bash
+rsync -av $BACKUP_ROOT/20241115_122300/var/lib/gotosocial/storage /var/lib/gotosocial/storage/
+chown -R gotosocial:gotosocial /var/lib/gotosocial/storage
+```
+
+10. Start GoToSocial
+```bash
+systemctl start gotosocial
+```
+
+Verify everything is working as expected:
+- Check logs for errors: `journalctl -u gotosocial`
+- Verify web interface accessibility
+- Test federation
+
 ## References
+
+These are some references that helped me create this script:
+
 - https://docs.gotosocial.org/en/latest/admin/backup_and_restore/
 - https://litestream.io/alternatives/cron/
