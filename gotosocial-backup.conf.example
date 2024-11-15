@@ -1,0 +1,14 @@
+# Root directory for backups
+BACKUP_ROOT="/mnt/data/backup/gotosocial"
+# Path to GoToSocial configuration file
+GTS_CONFIG="/etc/gotosocial/config.yaml"
+# Path to the GoToSocial SQLite database
+GTS_DB="/var/lib/gotosocial/database.sqlite"
+# Retention period in days
+RETENTION_DAYS=28
+# Encryption passphrase use to encrypt GtS exports and database
+PASSPHRASE="mysupersecretpassphrase"
+# Your ntfy instance
+NTFY_SERVER="ntfy.sh"
+# The topic you want to send gotosocial-backup failure alerts to
+NTFY_TOPIC="mygotosocial-alerts"
